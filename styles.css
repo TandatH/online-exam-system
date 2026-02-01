@@ -435,3 +435,70 @@ h2 {
         font-size: 48px;
     }
 }
+
+/* Firebase Specific Styles */
+.status-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.status-badge.online {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.offline {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.online-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.online-badge.online {
+    background: #d4edda;
+    color: #155724;
+}
+
+.online-badge.offline {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.info-box {
+    background: #e7f3ff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    margin: 15px 0;
+}
+
+.info-box h3 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.info-box ol {
+    color: #555;
+    line-height: 1.8;
+}
+
+.info-box a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.info-box a:hover {
+    text-decoration: underline;
+}
