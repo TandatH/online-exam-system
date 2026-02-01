@@ -3,24 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giao Diện Giáo Viên - Tạo Đề Thi</title>
+    <title>Giao Diện Giáo Viên - Tạo Đề Thi (Firebase)</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
+        <!-- Firebase Config Section -->
+        <div id="firebaseConfigSection" class="card">
+            <h1>⚙️ Cấu Hình Firebase</h1>
+            <p class="hint">Nhập thông tin Firebase để kết nối database (chỉ cần làm 1 lần)</p>
+            
+            <div class="form-group">
+                <label>API Key:</label>
+                <input type="text" id="apiKey" placeholder="AIzaSy..." class="input-field">
+            </div>
+            
+            <div class="form-group">
+                <label>Auth Domain:</label>
+                <input type="text" id="authDomain" placeholder="your-project.firebaseapp.com" class="input-field">
+            </div>
+            
+            <div class="form-group">
+                <label>Project ID:</label>
+                <input type="text" id="projectId" placeholder="your-project-id" class="input-field">
+            </div>
+            
+            <div class="form-group">
+                <label>Database URL:</label>
+                <input type="text" id="databaseURL" placeholder="https://your-project.firebaseio.com" class="input-field">
+            </div>
+            
+            <button onclick="saveFirebaseConfig()" class="btn btn-primary">Lưu Cấu Hình & Kết Nối</button>
+            <button onclick="skipFirebase()" class="btn btn-secondary">Bỏ Qua (Dùng LocalStorage)</button>
+            
+            <div class="info-box" style="margin-top: 20px;">
+                <h3>📖 Hướng dẫn tạo Firebase:</h3>
+                <ol style="padding-left: 20px; color: #555;">
+                    <li>Truy cập: <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a></li>
+                    <li>Tạo project mới</li>
+                    <li>Vào "Realtime Database" > Create Database > Start in test mode</li>
+                    <li>Vào Project Settings > General > Scroll xuống "Your apps"</li>
+                    <li>Copy Firebase configuration và dán vào form trên</li>
+                </ol>
+            </div>
+        </div>
+
         <!-- Login Form -->
-        <div id="loginSection" class="card">
+        <div id="loginSection" class="card hidden">
             <h1>Đăng Nhập Giáo Viên</h1>
+            <div id="connectionStatus" class="status-badge"></div>
             <input type="text" id="teacherName" placeholder="Nhập tên giáo viên" class="input-field">
             <button onclick="teacherLogin()" class="btn btn-primary">Đăng Nhập</button>
-            <p class="hint">Tên mặc định: ****</p>
+            <p class="hint">Tên mặc định: ***</p>
+            <button onclick="reconfigFirebase()" class="btn btn-secondary" style="margin-top: 10px;">Cấu hình lại Firebase</button>
         </div>
 
         <!-- Create Exam Section -->
         <div id="createExamSection" class="card hidden">
             <div class="header">
                 <h1>Tạo Đề Thi</h1>
-                <button onclick="logout()" class="btn btn-secondary">Đăng Xuất</button>
+                <div>
+                    <span id="onlineIndicator" class="online-badge">🟢 Online</span>
+                    <button onclick="logout()" class="btn btn-secondary">Đăng Xuất</button>
+                </div>
             </div>
 
             <div class="form-group">
@@ -70,24 +115,29 @@
                 <p class="hint">Link học sinh: <a id="studentLink" href="#" target="_blank"></a></p>
             </div>
 
+            <!-- Active Exams List -->
+            <div id="activeExamsSection">
+                <h2>Các Đề Thi Đang Hoạt Động</h2>
+                <div id="activeExamsList" class="preview-box"></div>
+            </div>
+
             <!-- Results Section -->
             <div id="resultsSection">
-                <h2>Kết Quả Thi</h2>
-                <div class="form-group">
-                    <label>Google Sheets URL (để nhận kết quả):</label>
-                    <input type="text" id="sheetsUrl" placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" class="input-field">
-                    <p class="hint">Hướng dẫn: Tạo Google Apps Script để nhận dữ liệu POST</p>
-                </div>
+                <h2>Kết Quả Thi (Realtime)</h2>
                 <div class="results-actions">
                     <button onclick="downloadExcel()" class="btn btn-success">📥 Tải Excel</button>
                     <button onclick="clearAllResults()" class="btn btn-danger">🗑️ Xóa Tất Cả Kết Quả</button>
+                    <button onclick="refreshResults()" class="btn btn-secondary">🔄 Làm Mới</button>
                 </div>
                 <div id="resultsList" class="results-box"></div>
             </div>
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="teacher.js"></script>
+    <script src="teacher-firebase.js"></script>
 </body>
 </html>
