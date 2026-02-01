@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giao Diện Học Sinh - Làm Bài Thi</title>
+    <title>Giao Diện Học Sinh - Làm Bài Thi (Firebase)</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -11,6 +11,7 @@
         <!-- Login with Code -->
         <div id="studentLoginSection" class="card">
             <h1>Đăng Nhập Học Sinh</h1>
+            <div id="connectionStatus" class="status-badge">⏳ Đang kết nối...</div>
             <input type="text" id="studentName" placeholder="Nhập họ tên của bạn" class="input-field">
             <input type="text" id="examCodeInput" placeholder="Nhập mã đề thi" class="input-field">
             <button onclick="studentLogin()" class="btn btn-primary">Đăng Nhập</button>
@@ -62,6 +63,9 @@
         </div>
     </div>
 
-    <script src="student.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="student-firebase.js"></script>
 </body>
 </html>
