@@ -1,19 +1,105 @@
-// Teacher.js - Quản lý giao diện giáo viên
+// Teacher Firebase.js - Hỗ trợ nhiều máy thi cùng lúc
 
+let db = null;
 let currentExam = null;
 let examResults = [];
+let firebaseInitialized = false;
+let resultsListener = null;
+
+// Khởi tạo Firebase
+function initializeFirebase(config) {
+    try {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(config);
+        }
+        db = firebase.database();
+        firebaseInitialized = true;
+        updateConnectionStatus(true);
+        
+        // Lắng nghe kết nối
+        const connectedRef = db.ref('.info/connected');
+        connectedRef.on('value', (snap) => {
+            updateConnectionStatus(snap.val());
+        });
+        
+        return true;
+    } catch (error) {
+        console.error('Lỗi khởi tạo Firebase:', error);
+        alert('Lỗi kết nối Firebase: ' + error.message);
+        return false;
+    }
+}
+
+// Cập nhật trạng thái kết nối
+function updateConnectionStatus(isConnected) {
+    const statusEl = document.getElementById('connectionStatus');
+    const onlineEl = document.getElementById('onlineIndicator');
+    
+    if (statusEl) {
+        statusEl.textContent = isConnected ? '🟢 Đã kết nối Firebase' : '🔴 Mất kết nối';
+        statusEl.className = 'status-badge ' + (isConnected ? 'online' : 'offline');
+    }
+    
+    if (onlineEl) {
+        onlineEl.textContent = isConnected ? '🟢 Online' : '🔴 Offline';
+        onlineEl.className = 'online-badge ' + (isConnected ? 'online' : 'offline');
+    }
+}
+
+// Lưu cấu hình Firebase
+function saveFirebaseConfig() {
+    const config = {
+        apiKey: document.getElementById('apiKey').value.trim(),
+        authDomain: document.getElementById('authDomain').value.trim(),
+        projectId: document.getElementById('projectId').value.trim(),
+        databaseURL: document.getElementById('databaseURL').value.trim()
+    };
+    
+    if (!config.apiKey || !config.authDomain || !config.projectId || !config.databaseURL) {
+        alert('Vui lòng điền đầy đủ thông tin Firebase!');
+        return;
+    }
+    
+    // Lưu config vào localStorage
+    localStorage.setItem('firebaseConfig', JSON.stringify(config));
+    
+    // Khởi tạo Firebase
+    if (initializeFirebase(config)) {
+        document.getElementById('firebaseConfigSection').classList.add('hidden');
+        document.getElementById('loginSection').classList.remove('hidden');
+        alert('✅ Đã kết nối Firebase thành công!');
+    }
+}
+
+// Bỏ qua Firebase, dùng localStorage
+function skipFirebase() {
+    firebaseInitialized = false;
+    document.getElementById('firebaseConfigSection').classList.add('hidden');
+    document.getElementById('loginSection').classList.remove('hidden');
+    alert('⚠️ Chế độ Offline: Chỉ lưu trên máy này. Nhiều máy không thể thi cùng lúc.');
+}
+
+// Cấu hình lại Firebase
+function reconfigFirebase() {
+    localStorage.removeItem('firebaseConfig');
+    document.getElementById('loginSection').classList.add('hidden');
+    document.getElementById('firebaseConfigSection').classList.remove('hidden');
+}
 
 // Đăng nhập giáo viên
 function teacherLogin() {
     const teacherName = document.getElementById('teacherName').value.trim();
     
-    // Kiểm tra tên giáo viên (có thể thêm logic kiểm tra phức tạp hơn)
     const validTeachers = ['admin', 'giaovien', 'teacher', 'GV'];
     
     if (validTeachers.includes(teacherName) || teacherName.toLowerCase().includes('giáo viên')) {
         document.getElementById('loginSection').classList.add('hidden');
         document.getElementById('createExamSection').classList.remove('hidden');
         localStorage.setItem('teacherName', teacherName);
+        
+        // Load danh sách đề thi và kết quả
+        loadActiveExams();
+        loadResults();
     } else {
         alert('Tên giáo viên không hợp lệ!');
     }
@@ -21,6 +107,9 @@ function teacherLogin() {
 
 // Đăng xuất
 function logout() {
+    if (resultsListener) {
+        resultsListener.off();
+    }
     localStorage.removeItem('teacherName');
     document.getElementById('loginSection').classList.remove('hidden');
     document.getElementById('createExamSection').classList.add('hidden');
@@ -68,8 +157,6 @@ function parseLatex() {
 // Phân tích cú pháp LaTeX
 function parseLatexQuestions(latex) {
     const questions = [];
-    
-    // Tách các câu hỏi dựa trên \question
     const questionBlocks = latex.split('\\question').filter(block => block.trim());
     
     questionBlocks.forEach((block, index) => {
@@ -128,38 +215,51 @@ function displayPreview(questions) {
     });
 }
 
-// Lưu đề thi và tạo mã
-function saveExam() {
+// Lưu đề thi
+async function saveExam() {
     if (!currentExam) {
         alert('Chưa có đề thi nào!');
         return;
     }
     
-    // Tạo mã ngẫu nhiên 6 ký tự
     const examCode = generateExamCode();
     
-    // Lưu vào localStorage
-    const exams = JSON.parse(localStorage.getItem('exams') || '{}');
-    exams[examCode] = {
+    const examData = {
         ...currentExam,
+        code: examCode,
         createdAt: new Date().toISOString(),
-        teacherName: localStorage.getItem('teacherName')
+        teacherName: localStorage.getItem('teacherName'),
+        active: true
     };
-    localStorage.setItem('exams', JSON.stringify(exams));
+    
+    if (firebaseInitialized && db) {
+        // Lưu vào Firebase
+        try {
+            await db.ref('exams/' + examCode).set(examData);
+            alert('✅ Đã lưu đề thi lên Firebase!');
+        } catch (error) {
+            alert('Lỗi lưu Firebase: ' + error.message);
+            return;
+        }
+    } else {
+        // Lưu vào localStorage (fallback)
+        const exams = JSON.parse(localStorage.getItem('exams') || '{}');
+        exams[examCode] = examData;
+        localStorage.setItem('exams', JSON.stringify(exams));
+    }
     
     // Hiển thị mã
     document.getElementById('examCode').textContent = examCode;
     document.getElementById('examCodeSection').classList.remove('hidden');
     
-    // Tạo link học sinh
-    const studentUrl = window.location.href.replace('teacher.html', 'student.html');
+    const studentUrl = window.location.href.replace('teacher-firebase.html', 'student-firebase.html');
     document.getElementById('studentLink').href = studentUrl;
     document.getElementById('studentLink').textContent = studentUrl;
     
-    alert('Đề thi đã được lưu thành công!');
+    loadActiveExams();
 }
 
-// Tạo mã đề thi ngẫu nhiên
+// Tạo mã đề thi
 function generateExamCode() {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
@@ -169,7 +269,7 @@ function generateExamCode() {
     return code;
 }
 
-// Copy mã đề thi
+// Copy mã
 function copyCode() {
     const code = document.getElementById('examCode').textContent;
     navigator.clipboard.writeText(code).then(() => {
@@ -177,12 +277,99 @@ function copyCode() {
     });
 }
 
-// Tải kết quả từ localStorage
+// Load các đề thi đang hoạt động
+async function loadActiveExams() {
+    const container = document.getElementById('activeExamsList');
+    
+    if (firebaseInitialized && db) {
+        db.ref('exams').orderByChild('active').equalTo(true).once('value', (snapshot) => {
+            const exams = snapshot.val() || {};
+            displayActiveExams(exams, container);
+        });
+    } else {
+        const exams = JSON.parse(localStorage.getItem('exams') || '{}');
+        const activeExams = {};
+        Object.keys(exams).forEach(code => {
+            if (exams[code].active) {
+                activeExams[code] = exams[code];
+            }
+        });
+        displayActiveExams(activeExams, container);
+    }
+}
+
+// Hiển thị đề thi
+function displayActiveExams(exams, container) {
+    if (Object.keys(exams).length === 0) {
+        container.innerHTML = '<p class="hint">Chưa có đề thi nào đang hoạt động.</p>';
+        return;
+    }
+    
+    let html = '<table style="width:100%; border-collapse: collapse;">';
+    html += '<thead><tr style="background:#f8f9fa;"><th style="padding:10px; border:1px solid #ddd;">Mã</th><th style="padding:10px; border:1px solid #ddd;">Tên đề</th><th style="padding:10px; border:1px solid #ddd;">Thời gian</th><th style="padding:10px; border:1px solid #ddd;">Số câu</th><th style="padding:10px; border:1px solid #ddd;">Thao tác</th></tr></thead><tbody>';
+    
+    Object.keys(exams).forEach(code => {
+        const exam = exams[code];
+        html += `<tr>
+            <td style="padding:10px; border:1px solid #ddd;"><strong>${code}</strong></td>
+            <td style="padding:10px; border:1px solid #ddd;">${exam.title}</td>
+            <td style="padding:10px; border:1px solid #ddd;">${exam.duration} phút</td>
+            <td style="padding:10px; border:1px solid #ddd;">${exam.questions.length} câu</td>
+            <td style="padding:10px; border:1px solid #ddd;">
+                <button onclick="deactivateExam('${code}')" class="btn-delete">Vô hiệu hóa</button>
+            </td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+// Vô hiệu hóa đề thi
+async function deactivateExam(code) {
+    if (!confirm('Vô hiệu hóa đề thi này? Học sinh sẽ không thể truy cập nữa.')) {
+        return;
+    }
+    
+    if (firebaseInitialized && db) {
+        await db.ref('exams/' + code + '/active').set(false);
+    } else {
+        const exams = JSON.parse(localStorage.getItem('exams') || '{}');
+        if (exams[code]) {
+            exams[code].active = false;
+            localStorage.setItem('exams', JSON.stringify(exams));
+        }
+    }
+    
+    loadActiveExams();
+    alert('Đã vô hiệu hóa đề thi!');
+}
+
+// Load kết quả
 function loadResults() {
-    const results = JSON.parse(localStorage.getItem('examResults') || '[]');
+    if (firebaseInitialized && db) {
+        // Realtime listener
+        resultsListener = db.ref('results');
+        resultsListener.on('value', (snapshot) => {
+            const results = snapshot.val() || {};
+            examResults = Object.values(results);
+            displayResults();
+        });
+    } else {
+        examResults = JSON.parse(localStorage.getItem('examResults') || '[]');
+        displayResults();
+        setInterval(() => {
+            examResults = JSON.parse(localStorage.getItem('examResults') || '[]');
+            displayResults();
+        }, 5000);
+    }
+}
+
+// Hiển thị kết quả
+function displayResults() {
     const resultsList = document.getElementById('resultsList');
     
-    if (results.length === 0) {
+    if (examResults.length === 0) {
         resultsList.innerHTML = '<p class="hint">Chưa có kết quả thi nào.</p>';
         return;
     }
@@ -190,7 +377,7 @@ function loadResults() {
     let html = '<table style="width:100%; border-collapse: collapse;">';
     html += '<thead><tr style="background:#f8f9fa;"><th style="padding:10px; border:1px solid #ddd;">Họ tên</th><th style="padding:10px; border:1px solid #ddd;">Mã đề</th><th style="padding:10px; border:1px solid #ddd;">Điểm</th><th style="padding:10px; border:1px solid #ddd;">Thời gian</th><th style="padding:10px; border:1px solid #ddd;">Cảnh báo</th><th style="padding:10px; border:1px solid #ddd;">Thao tác</th></tr></thead><tbody>';
     
-    results.forEach((result, index) => {
+    examResults.forEach((result, index) => {
         html += `<tr>
             <td style="padding:10px; border:1px solid #ddd;">${result.studentName}</td>
             <td style="padding:10px; border:1px solid #ddd;">${result.examCode}</td>
@@ -198,7 +385,7 @@ function loadResults() {
             <td style="padding:10px; border:1px solid #ddd;">${new Date(result.submittedAt).toLocaleString('vi-VN')}</td>
             <td style="padding:10px; border:1px solid #ddd;">${result.tabSwitch ? '⚠️ Có chuyển tab' : '✓ Bình thường'}</td>
             <td style="padding:10px; border:1px solid #ddd; text-align:center;">
-                <button onclick="deleteResult(${index})" class="btn-delete" title="Xóa">🗑️</button>
+                <button onclick="deleteResult('${result.id || index}')" class="btn-delete" title="Xóa">🗑️</button>
             </td>
         </tr>`;
     });
@@ -207,62 +394,58 @@ function loadResults() {
     resultsList.innerHTML = html;
 }
 
-// Khởi tạo khi trang load
-window.addEventListener('load', () => {
-    // Kiểm tra nếu đã đăng nhập
-    const teacherName = localStorage.getItem('teacherName');
-    if (teacherName) {
-        document.getElementById('loginSection').classList.add('hidden');
-        document.getElementById('createExamSection').classList.remove('hidden');
-    }
-    
-    // Load kết quả
-    loadResults();
-    
-    // Cập nhật kết quả mỗi 5 giây
-    setInterval(loadResults, 5000);
-});
-
-// Xóa một kết quả cụ thể
-function deleteResult(index) {
+// Xóa kết quả
+async function deleteResult(id) {
     if (!confirm('Bạn có chắc muốn xóa kết quả này?')) {
         return;
     }
     
-    const results = JSON.parse(localStorage.getItem('examResults') || '[]');
-    results.splice(index, 1);
-    localStorage.setItem('examResults', JSON.stringify(results));
-    loadResults();
+    if (firebaseInitialized && db) {
+        await db.ref('results/' + id).remove();
+    } else {
+        examResults = examResults.filter((r, i) => (r.id || i) != id);
+        localStorage.setItem('examResults', JSON.stringify(examResults));
+        displayResults();
+    }
+    
     alert('Đã xóa kết quả!');
 }
 
 // Xóa tất cả kết quả
-function clearAllResults() {
+async function clearAllResults() {
     if (!confirm('⚠️ BẠN CÓ CHẮC MUỐN XÓA TẤT CẢ KẾT QUẢ?\n\nHành động này không thể hoàn tác!')) {
         return;
     }
     
-    // Xác nhận lần 2 để đảm bảo
     if (!confirm('Xác nhận lần cuối: Xóa tất cả kết quả thi?')) {
         return;
     }
     
-    localStorage.setItem('examResults', JSON.stringify([]));
-    loadResults();
+    if (firebaseInitialized && db) {
+        await db.ref('results').remove();
+    } else {
+        localStorage.setItem('examResults', JSON.stringify([]));
+        examResults = [];
+        displayResults();
+    }
+    
     alert('Đã xóa tất cả kết quả!');
 }
 
-// Tải file Excel
+// Làm mới kết quả
+function refreshResults() {
+    loadResults();
+    alert('Đã làm mới kết quả!');
+}
+
+// Tải Excel
 function downloadExcel() {
-    const results = JSON.parse(localStorage.getItem('examResults') || '[]');
-    
-    if (results.length === 0) {
+    if (examResults.length === 0) {
         alert('Không có kết quả nào để tải!');
         return;
     }
     
-    // Chuẩn bị dữ liệu cho Excel
-    const excelData = results.map((result, index) => {
+    const excelData = examResults.map((result, index) => {
         return {
             'STT': index + 1,
             'Họ và tên': result.studentName,
@@ -277,30 +460,17 @@ function downloadExcel() {
         };
     });
     
-    // Tạo worksheet
     const ws = XLSX.utils.json_to_sheet(excelData);
-    
-    // Tự động điều chỉnh độ rộng cột
     const colWidths = [
-        { wch: 5 },  // STT
-        { wch: 25 }, // Họ và tên
-        { wch: 12 }, // Mã đề thi
-        { wch: 30 }, // Tên đề thi
-        { wch: 8 },  // Điểm
-        { wch: 12 }, // Số câu đúng
-        { wch: 12 }, // Tổng số câu
-        { wch: 10 }, // Tỷ lệ
-        { wch: 12 }, // Chuyển tab
-        { wch: 20 }  // Thời gian nộp
+        { wch: 5 }, { wch: 25 }, { wch: 12 }, { wch: 30 }, { wch: 8 },
+        { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 20 }
     ];
     ws['!cols'] = colWidths;
     
-    // Tạo workbook
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Kết Quả Thi');
     
-    // Tạo sheet thống kê
-    const stats = calculateStatistics(results);
+    const stats = calculateStatistics(examResults);
     const statsData = [
         { 'Chỉ số': 'Tổng số học sinh', 'Giá trị': stats.total },
         { 'Chỉ số': 'Điểm trung bình', 'Giá trị': stats.average },
@@ -316,17 +486,14 @@ function downloadExcel() {
     wsStats['!cols'] = [{ wch: 25 }, { wch: 15 }];
     XLSX.utils.book_append_sheet(wb, wsStats, 'Thống Kê');
     
-    // Tạo tên file với ngày giờ
     const now = new Date();
     const fileName = `KetQuaThi_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.xlsx`;
     
-    // Tải file
     XLSX.writeFile(wb, fileName);
-    
     alert(`✅ Đã tải file Excel: ${fileName}`);
 }
 
-// Tính toán thống kê
+// Tính thống kê
 function calculateStatistics(results) {
     const scores = results.map(r => r.score);
     const total = results.length;
@@ -343,3 +510,26 @@ function calculateStatistics(results) {
         tabSwitch: results.filter(r => r.tabSwitch).length
     };
 }
+
+// Khởi tạo khi load trang
+window.addEventListener('load', () => {
+    // Kiểm tra Firebase config
+    const savedConfig = localStorage.getItem('firebaseConfig');
+    if (savedConfig) {
+        const config = JSON.parse(savedConfig);
+        if (initializeFirebase(config)) {
+            document.getElementById('firebaseConfigSection').classList.add('hidden');
+            
+            // Kiểm tra login
+            const teacherName = localStorage.getItem('teacherName');
+            if (teacherName) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('createExamSection').classList.remove('hidden');
+                loadActiveExams();
+                loadResults();
+            } else {
+                document.getElementById('loginSection').classList.remove('hidden');
+            }
+        }
+    }
+});
