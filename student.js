@@ -1,5 +1,6 @@
-// Student.js - Quản lý giao diện học sinh
+// Student Firebase.js - Hỗ trợ nhiều máy thi cùng lúc
 
+let db = null;
 let currentExam = null;
 let studentName = '';
 let examCode = '';
@@ -8,9 +9,48 @@ let timerInterval = null;
 let studentAnswers = {};
 let tabSwitchDetected = false;
 let examSubmitted = false;
+let resultId = null;
+
+// Khởi tạo Firebase tự động
+function initializeFirebase() {
+    const savedConfig = localStorage.getItem('firebaseConfig');
+    
+    if (savedConfig) {
+        try {
+            const config = JSON.parse(savedConfig);
+            if (!firebase.apps.length) {
+                firebase.initializeApp(config);
+            }
+            db = firebase.database();
+            updateConnectionStatus(true);
+            
+            // Monitor connection
+            const connectedRef = db.ref('.info/connected');
+            connectedRef.on('value', (snap) => {
+                updateConnectionStatus(snap.val());
+            });
+            
+            return true;
+        } catch (error) {
+            console.error('Lỗi Firebase:', error);
+            return false;
+        }
+    }
+    
+    return false;
+}
+
+// Cập nhật trạng thái kết nối
+function updateConnectionStatus(isConnected) {
+    const statusEl = document.getElementById('connectionStatus');
+    if (statusEl) {
+        statusEl.textContent = isConnected ? '🟢 Đã kết nối' : '🔴 Mất kết nối';
+        statusEl.className = 'status-badge ' + (isConnected ? 'online' : 'offline');
+    }
+}
 
 // Đăng nhập học sinh
-function studentLogin() {
+async function studentLogin() {
     const nameInput = document.getElementById('studentName').value.trim();
     const codeInput = document.getElementById('examCodeInput').value.trim().toUpperCase();
     
@@ -24,23 +64,50 @@ function studentLogin() {
         return;
     }
     
-    // Lấy đề thi từ localStorage
-    const exams = JSON.parse(localStorage.getItem('exams') || '{}');
-    
-    if (!exams[codeInput]) {
-        alert('Mã đề thi không hợp lệ!');
-        return;
-    }
-    
     studentName = nameInput;
     examCode = codeInput;
-    currentExam = exams[codeInput];
     
-    // Hiển thị màn hình chờ
+    // Lấy đề thi từ Firebase hoặc localStorage
+    if (db) {
+        try {
+            const snapshot = await db.ref('exams/' + codeInput).once('value');
+            const exam = snapshot.val();
+            
+            if (!exam) {
+                alert('Mã đề thi không hợp lệ!');
+                return;
+            }
+            
+            if (!exam.active) {
+                alert('Đề thi này đã bị vô hiệu hóa!');
+                return;
+            }
+            
+            currentExam = exam;
+            showWaitingScreen();
+            
+        } catch (error) {
+            alert('Lỗi kết nối: ' + error.message);
+        }
+    } else {
+        // Fallback: localStorage
+        const exams = JSON.parse(localStorage.getItem('exams') || '{}');
+        
+        if (!exams[codeInput]) {
+            alert('Mã đề thi không hợp lệ hoặc chưa được tạo!');
+            return;
+        }
+        
+        currentExam = exams[codeInput];
+        showWaitingScreen();
+    }
+}
+
+// Hiển thị màn hình chờ
+function showWaitingScreen() {
     document.getElementById('studentLoginSection').classList.add('hidden');
     document.getElementById('waitingSection').classList.remove('hidden');
     
-    // Hiển thị thông tin đề thi
     document.getElementById('welcomeMessage').textContent = `Chào ${studentName}!`;
     document.getElementById('examTitleDisplay').textContent = currentExam.title;
     document.getElementById('examDurationDisplay').textContent = currentExam.duration;
@@ -52,22 +119,13 @@ function startExam() {
     document.getElementById('waitingSection').classList.add('hidden');
     document.getElementById('examSection').classList.remove('hidden');
     
-    // Hiển thị tiêu đề
     document.getElementById('examTitle').textContent = currentExam.title;
     
-    // Khởi tạo đáp án
     studentAnswers = {};
-    
-    // Hiển thị câu hỏi
     displayQuestions();
-    
-    // Bắt đầu đếm ngược
     startTimer();
-    
-    // Theo dõi chuyển tab
     setupTabSwitchDetection();
     
-    // Hiển thị cảnh báo
     document.getElementById('warningMessage').classList.remove('hidden');
 }
 
@@ -107,10 +165,10 @@ function saveAnswer(questionIndex, choiceIndex) {
     studentAnswers[questionIndex] = choiceIndex;
 }
 
-// Bắt đầu đồng hồ đếm ngược
+// Bắt đầu đồng hồ
 function startTimer() {
     startTime = Date.now();
-    const duration = currentExam.duration * 60; // Chuyển sang giây
+    const duration = currentExam.duration * 60;
     let remainingTime = duration;
     
     timerInterval = setInterval(() => {
@@ -122,15 +180,13 @@ function startTimer() {
         const timerElement = document.getElementById('timer');
         timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         
-        // Cảnh báo khi còn 5 phút
         if (remainingTime <= 300 && remainingTime > 0) {
             timerElement.classList.add('warning');
         }
         
-        // Hết giờ
         if (remainingTime <= 0) {
             clearInterval(timerInterval);
-            submitExam(true); // Tự động nộp bài
+            submitExam(true);
         }
     }, 1000);
 }
@@ -140,8 +196,6 @@ function setupTabSwitchDetection() {
     document.addEventListener('visibilitychange', () => {
         if (document.hidden && !examSubmitted) {
             tabSwitchDetected = true;
-            
-            // Tự động nộp bài khi chuyển tab
             alert('⚠️ Bạn đã chuyển tab! Bài thi sẽ được nộp tự động.');
             submitExam(true);
         }
@@ -154,7 +208,6 @@ function submitExam(autoSubmit = false) {
     
     examSubmitted = true;
     
-    // Dừng đồng hồ
     if (timerInterval) {
         clearInterval(timerInterval);
     }
@@ -171,17 +224,11 @@ function submitExam(autoSubmit = false) {
     
     const score = ((correctCount / totalQuestions) * 10).toFixed(1);
     
-    // Ẩn phần thi
     document.getElementById('examSection').classList.add('hidden');
-    
-    // Hiển thị kết quả
     displayResult(correctCount, totalQuestions, score, autoSubmit);
     
-    // Lưu kết quả vào localStorage
+    // Lưu kết quả
     saveResult(correctCount, totalQuestions, score);
-    
-    // Gửi lên Google Sheets (nếu có)
-    sendToGoogleSheets(correctCount, totalQuestions, score);
 }
 
 // Hiển thị kết quả
@@ -199,11 +246,10 @@ function displayResult(correctCount, totalQuestions, score, autoSubmit) {
     
     document.getElementById('submissionStatus').textContent = statusMessage;
     
-    // Hiển thị chi tiết từng câu
     displayDetailedResults();
 }
 
-// Hiển thị chi tiết kết quả
+// Hiển thị chi tiết
 function displayDetailedResults() {
     const container = document.getElementById('detailedResults');
     container.innerHTML = '<h3>Chi Tiết Các Câu:</h3>';
@@ -237,10 +283,8 @@ function displayDetailedResults() {
     });
 }
 
-// Lưu kết quả vào localStorage
-function saveResult(correctCount, totalQuestions, score) {
-    const results = JSON.parse(localStorage.getItem('examResults') || '[]');
-    
+// Lưu kết quả
+async function saveResult(correctCount, totalQuestions, score) {
     const result = {
         studentName: studentName,
         examCode: examCode,
@@ -253,51 +297,38 @@ function saveResult(correctCount, totalQuestions, score) {
         submittedAt: new Date().toISOString()
     };
     
+    if (db) {
+        // Lưu vào Firebase
+        try {
+            const newResultRef = db.ref('results').push();
+            resultId = newResultRef.key;
+            result.id = resultId;
+            await newResultRef.set(result);
+            console.log('Đã lưu kết quả lên Firebase');
+        } catch (error) {
+            console.error('Lỗi lưu Firebase:', error);
+            // Fallback: localStorage
+            saveToLocalStorage(result);
+        }
+    } else {
+        // Lưu vào localStorage
+        saveToLocalStorage(result);
+    }
+}
+
+// Lưu vào localStorage (fallback)
+function saveToLocalStorage(result) {
+    const results = JSON.parse(localStorage.getItem('examResults') || '[]');
     results.push(result);
     localStorage.setItem('examResults', JSON.stringify(results));
 }
 
-// Gửi kết quả lên Google Sheets
-async function sendToGoogleSheets(correctCount, totalQuestions, score) {
-    // Lấy URL Google Sheets từ localStorage (giáo viên đã cài đặt)
-    const sheetsUrl = localStorage.getItem('sheetsUrl');
-    
-    if (!sheetsUrl) {
-        console.log('Chưa cấu hình Google Sheets URL');
-        return;
-    }
-    
-    const data = {
-        studentName: studentName,
-        examCode: examCode,
-        examTitle: currentExam.title,
-        score: score,
-        correctCount: correctCount,
-        totalQuestions: totalQuestions,
-        tabSwitch: tabSwitchDetected ? 'Có' : 'Không',
-        submittedAt: new Date().toLocaleString('vi-VN'),
-        timestamp: new Date().getTime()
-    };
-    
-    try {
-        const response = await fetch(sheetsUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
-        
-        console.log('Đã gửi kết quả lên Google Sheets');
-    } catch (error) {
-        console.error('Lỗi khi gửi lên Google Sheets:', error);
-    }
-}
-
-// Khởi tạo khi trang load
+// Khởi tạo khi load
 window.addEventListener('load', () => {
-    // Ngăn không cho quay lại nếu đã nộp bài
+    // Tự động kết nối Firebase nếu có config
+    initializeFirebase();
+    
+    // Ngăn reload
     window.addEventListener('beforeunload', (e) => {
         if (!examSubmitted && startTime) {
             e.preventDefault();
