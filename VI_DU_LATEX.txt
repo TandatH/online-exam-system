@@ -1,0 +1,209 @@
+# VÍ DỤ MÃ LATEX CHO ĐỀ THI
+
+## Ví dụ 1: Đề thi Toán học cơ bản
+
+\question 2 + 2 bằng mấy?
+\choice 3
+\CorrectChoice 4
+\choice 5
+\choice 6
+
+\question 10 - 3 bằng mấy?
+\choice 6
+\CorrectChoice 7
+\choice 8
+\choice 9
+
+\question 3 × 4 bằng mấy?
+\choice 7
+\choice 10
+\CorrectChoice 12
+\choice 15
+
+\question 20 ÷ 4 bằng mấy?
+\choice 4
+\CorrectChoice 5
+\choice 6
+\choice 7
+
+\question Căn bậc hai của 16 là?
+\choice 2
+\choice 3
+\CorrectChoice 4
+\choice 8
+
+## Ví dụ 2: Đề thi Địa lý Việt Nam
+
+\question Thủ đô của Việt Nam là?
+\choice Thành phố Hồ Chí Minh
+\CorrectChoice Hà Nội
+\choice Đà Nẵng
+\choice Huế
+
+\question Sông nào dài nhất Việt Nam?
+\choice Sông Hồng
+\CorrectChoice Sông Mekong
+\choice Sông Đồng Nai
+\choice Sông Cửu Long
+
+\question Núi nào cao nhất Việt Nam?
+\choice Núi Bạch Mã
+\choice Núi Yên Tử
+\CorrectChoice Núi Phan Xi Păng
+\choice Núi Langbiang
+
+\question Việt Nam có bao nhiêu tỉnh thành?
+\choice 58
+\choice 60
+\choice 62
+\CorrectChoice 63
+
+\question Vịnh nào được UNESCO công nhận là di sản thiên nhiên thế giới?
+\choice Vịnh Nha Trang
+\CorrectChoice Vịnh Hạ Long
+\choice Vịnh Vân Phong
+\choice Vịnh Cam Ranh
+
+## Ví dụ 3: Đề thi Tiếng Anh cơ bản
+
+\question What is the capital of England?
+\choice Manchester
+\choice Liverpool
+\CorrectChoice London
+\choice Birmingham
+
+\question How do you say "Xin chào" in English?
+\CorrectChoice Hello
+\choice Goodbye
+\choice Thank you
+\choice Sorry
+
+\question "Cat" means what in Vietnamese?
+\choice Chó
+\CorrectChoice Mèo
+\choice Gà
+\choice Vịt
+
+\question Which word is a color?
+\choice Happy
+\choice Fast
+\CorrectChoice Blue
+\choice Big
+
+\question "I ___ a student" - Fill in the blank
+\choice are
+\CorrectChoice am
+\choice is
+\choice be
+
+## Ví dụ 4: Đề thi Lịch sử Việt Nam
+
+\question Năm nào Việt Nam giành độc lập?
+\choice 1944
+\CorrectChoice 1945
+\choice 1946
+\choice 1950
+
+\question Ai là người sáng lập Đảng Cộng sản Việt Nam?
+\choice Võ Nguyên Giáp
+\choice Lê Duẩn
+\CorrectChoice Hồ Chí Minh
+\choice Trường Chinh
+
+\question Chiến thắng nào kết thúc chiến tranh Việt Nam?
+\choice Chiến thắng Điện Biên Phủ
+\CorrectChoice Chiến dịch Hồ Chí Minh
+\choice Chiến thắng Đống Đa
+\choice Chiến thắng Chi Lăng
+
+\question Triều đại nào tồn tại lâu nhất trong lịch sử Việt Nam?
+\choice Nhà Lý
+\CorrectChoice Nhà Lê
+\choice Nhà Trần
+\choice Nhà Nguyễn
+
+\question Năm nào nước ta thống nhất?
+\choice 1954
+\choice 1965
+\CorrectChoice 1975
+\choice 1976
+
+## Ví dụ 5: Đề thi Khoa học tự nhiên
+
+\question Hành tinh nào gần Mặt Trời nhất?
+\CorrectChoice Sao Thủy
+\choice Sao Kim
+\choice Trái Đất
+\choice Sao Hỏa
+
+\question Nước đóng băng ở nhiệt độ nào?
+\CorrectChoice 0°C
+\choice -10°C
+\choice 10°C
+\choice 32°C
+
+\question Cơ quan nào bơm máu đi khắp cơ thể?
+\choice Phổi
+\choice Gan
+\CorrectChoice Tim
+\choice Thận
+
+\question Photosynthesis xảy ra ở đâu trong cây?
+\choice Rễ
+\choice Thân
+\CorrectChoice Lá
+\choice Hoa
+
+\question Công thức hóa học của nước là gì?
+\choice CO2
+\CorrectChoice H2O
+\choice O2
+\choice NaCl
+
+## Ví dụ 6: Đề thi Tin học
+
+\question HTML là viết tắt của gì?
+\CorrectChoice HyperText Markup Language
+\choice High Tech Modern Language
+\choice Home Tool Markup Language
+\choice Hyper Transfer Markup Language
+
+\question Ngôn ngữ lập trình nào được dùng cho web?
+\choice C++
+\choice Java
+\CorrectChoice JavaScript
+\choice Python
+
+\question RAM là gì?
+\choice Read Access Memory
+\CorrectChoice Random Access Memory
+\choice Rapid Access Memory
+\choice Real Access Memory
+
+\question Phím tắt để sao chép văn bản là gì?
+\choice Ctrl + V
+\CorrectChoice Ctrl + C
+\choice Ctrl + X
+\choice Ctrl + Z
+
+\question CPU là gì?
+\choice Computer Personal Unit
+\choice Central Power Unit
+\CorrectChoice Central Processing Unit
+\choice Computer Processing Unit
+
+## HƯỚNG DẪN TẠO ĐỀ THI CỦA BẠN:
+
+1. Copy một trong các ví dụ trên
+2. Thay đổi câu hỏi và đáp án theo nội dung của bạn
+3. Đảm bảo mỗi câu có ĐỘT MỘT \CorrectChoice
+4. Có thể có 2-6 đáp án cho mỗi câu
+5. Paste vào ô "Mã LaTeX Đề Thi" trong giao diện giáo viên
+
+## MẸO:
+
+- Nên có 10-20 câu hỏi cho mỗi đề thi
+- Sắp xếp câu hỏi từ dễ đến khó
+- Tránh đáp án quá dài
+- Kiểm tra chính tả trước khi lưu
+- Test đề thi trước khi giao cho học sinh

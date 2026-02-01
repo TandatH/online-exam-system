@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giao Diện Học Sinh - Làm Bài Thi</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Login with Code -->
+        <div id="studentLoginSection" class="card">
+            <h1>Đăng Nhập Học Sinh</h1>
+            <input type="text" id="studentName" placeholder="Nhập họ tên của bạn" class="input-field">
+            <input type="text" id="examCodeInput" placeholder="Nhập mã đề thi" class="input-field">
+            <button onclick="studentLogin()" class="btn btn-primary">Đăng Nhập</button>
+        </div>
+
+        <!-- Waiting Screen -->
+        <div id="waitingSection" class="card hidden">
+            <h1 id="welcomeMessage">Chào mừng!</h1>
+            <div class="exam-info">
+                <h2 id="examTitleDisplay"></h2>
+                <p>Thời gian: <strong id="examDurationDisplay"></strong> phút</p>
+                <p>Số câu hỏi: <strong id="questionCountDisplay"></strong></p>
+            </div>
+            <button onclick="startExam()" class="btn btn-success btn-large">Bắt Đầu Làm Bài</button>
+        </div>
+
+        <!-- Exam Section -->
+        <div id="examSection" class="card hidden">
+            <div class="exam-header">
+                <h2 id="examTitle"></h2>
+                <div class="timer-display">
+                    <span>⏱️ Thời gian còn lại: </span>
+                    <span id="timer" class="timer">00:00</span>
+                </div>
+            </div>
+
+            <div id="warningMessage" class="warning-box hidden">
+                ⚠️ Cảnh báo: Không chuyển tab! Nếu chuyển tab, bài thi sẽ tự động nộp.
+            </div>
+
+            <div id="questionsContainer"></div>
+
+            <button onclick="submitExam()" class="btn btn-primary btn-large">Nộp Bài</button>
+        </div>
+
+        <!-- Result Section -->
+        <div id="resultSection" class="card hidden">
+            <h1>Kết Quả Thi</h1>
+            <div class="result-display">
+                <div class="score-circle">
+                    <span id="finalScore" class="score-number">0</span>
+                    <span class="score-label">/10</span>
+                </div>
+                <p>Họ tên: <strong id="resultName"></strong></p>
+                <p>Số câu đúng: <strong id="correctAnswers"></strong>/<strong id="totalQuestions"></strong></p>
+                <p id="submissionStatus" class="status-message"></p>
+            </div>
+            <div id="detailedResults" class="detailed-results"></div>
+        </div>
+    </div>
+
+    <script src="student.js"></script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giao Diện Giáo Viên - Tạo Đề Thi</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Login Form -->
+        <div id="loginSection" class="card">
+            <h1>Đăng Nhập Giáo Viên</h1>
+            <input type="text" id="teacherName" placeholder="Nhập tên giáo viên" class="input-field">
+            <button onclick="teacherLogin()" class="btn btn-primary">Đăng Nhập</button>
+            <p class="hint">Tên mặc định: admin</p>
+        </div>
+
+        <!-- Create Exam Section -->
+        <div id="createExamSection" class="card hidden">
+            <div class="header">
+                <h1>Tạo Đề Thi</h1>
+                <button onclick="logout()" class="btn btn-secondary">Đăng Xuất</button>
+            </div>
+
+            <div class="form-group">
+                <label>Tên Đề Thi:</label>
+                <input type="text" id="examTitle" placeholder="Ví dụ: Kiểm tra toán học lớp 10" class="input-field">
+            </div>
+
+            <div class="form-group">
+                <label>Thời Gian Làm Bài (phút):</label>
+                <input type="number" id="examDuration" value="30" min="1" class="input-field">
+            </div>
+
+            <div class="form-group">
+                <label>Mã LaTeX Đề Thi:</label>
+                <textarea id="latexInput" class="textarea-field" rows="10" placeholder="Nhập mã LaTeX theo định dạng:
+
+\question Câu hỏi 1?
+\choice Đáp án A
+\choice Đáp án B
+\choice Đáp án C
+\CorrectChoice Đáp án D
+
+\question Câu hỏi 2?
+\choice Đáp án A
+\CorrectChoice Đáp án B
+\choice Đáp án C
+\choice Đáp án D"></textarea>
+            </div>
+
+            <button onclick="parseLatex()" class="btn btn-primary">Xem Trước Đề Thi</button>
+
+            <!-- Preview Section -->
+            <div id="previewSection" class="hidden">
+                <h2>Xem Trước Đề Thi</h2>
+                <div id="questionsPreview" class="preview-box"></div>
+                
+                <button onclick="saveExam()" class="btn btn-success">Lưu Đề Thi & Tạo Mã</button>
+            </div>
+
+            <!-- Exam Code Display -->
+            <div id="examCodeSection" class="hidden">
+                <h2>Mã Đề Thi Đã Tạo</h2>
+                <div class="code-display">
+                    <p>Mã cho học sinh: <strong id="examCode"></strong></p>
+                    <button onclick="copyCode()" class="btn btn-secondary">Copy Mã</button>
+                </div>
+                <p class="hint">Link học sinh: <a id="studentLink" href="#" target="_blank"></a></p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection">
+                <h2>Kết Quả Thi</h2>
+                <div class="form-group">
+                    <label>Google Sheets URL (để nhận kết quả):</label>
+                    <input type="text" id="sheetsUrl" placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" class="input-field">
+                    <p class="hint">Hướng dẫn: Tạo Google Apps Script để nhận dữ liệu POST</p>
+                </div>
+                <div class="results-actions">
+                    <button onclick="downloadExcel()" class="btn btn-success">📥 Tải Excel</button>
+                    <button onclick="clearAllResults()" class="btn btn-danger">🗑️ Xóa Tất Cả Kết Quả</button>
+                </div>
+                <div id="resultsList" class="results-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="teacher.js"></script>
+</body>
+</html>
